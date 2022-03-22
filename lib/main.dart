@@ -51,7 +51,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  //Variables
+  CameraPosition position =
+  CameraPosition(target: LatLng(48.858278,2.29425),zoom: 14);
+
+  Completer<GoogleMapController> controller = Completer();
+
 
 
 
