@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 void main() {
@@ -52,10 +53,33 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   //Variables
-  CameraPosition position =
-  CameraPosition(target: LatLng(48.858278,2.29425),zoom: 14);
-
+  CameraPosition position = CameraPosition(target: LatLng(48.858278,2.29425),zoom: 14);
   Completer<GoogleMapController> controller = Completer();
+  Position? maPosition;
+  CameraPosition? positionActuelle;
+
+
+  //Fonction
+  Future <Position> verification() async{
+    bool service;
+    LocationPermission permission;
+    service = await Geolocator.isLocationServiceEnabled();
+    if(!service){
+      return Future.error("La localisation n'a pas été trouvé");
+    }
+    permission = await Geolocator.checkPermission();
+    if(permission == LocationPermission.denied){
+      permission = await Geolocator.requestPermission();
+      if(permission == LocationPermission.denied){
+        return Future.error("L'utilisateur ne souhaite donnée la permission à l'application");
+      }
+    }
+    if(permission == LocationPermission.deniedForever){
+      return Future.error("'utilisateur ne souhaite absolument pas donnée sa permission");
+    }
+    return Geolocator.getCurrentPosition();
+
+  }
 
 
 
@@ -81,9 +105,22 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget bodyPage(){
+    verification().then((Position gps) {
+      setState(() {
+        maPosition = gps;
+        positionActuelle =
+            CameraPosition(
+                target: LatLng(maPosition!.latitude,maPosition!.longitude),
+                zoom: 14);
+      });
+    });
     return GoogleMap(
-        initialCameraPosition: position,
-      onMapCreated: (GoogleMapController control){
+        initialCameraPosition: positionActuelle!,
+      onMapCreated: (GoogleMapController control) async{
+          String map = await DefaultAssetBundle
+              .of(context)
+              .loadString("lib/style/mapStyle.json");
+          control.setMapStyle(map);
           controller.complete(control);
       },
       myLocationEnabled: true,
